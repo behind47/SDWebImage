@@ -42,7 +42,7 @@ typedef NSMapTable<NSString *, id<SDWebImageOperation>> SDOperationsDictionary;
 
 - (void)sd_setImageLoadOperation:(nullable id<SDWebImageOperation>)operation forKey:(nullable NSString *)key {
     if (key) {
-        [self sd_cancelImageLoadOperationWithKey:key];
+        [self sd_cancelImageLoadOperationWithKey:key]; // 外层已经执行过了，这里为啥又来一次？
         if (operation) {
             SDOperationsDictionary *operationDictionary = [self sd_operationDictionary];
             @synchronized (self) {

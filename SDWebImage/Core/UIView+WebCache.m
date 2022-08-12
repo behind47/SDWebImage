@@ -68,7 +68,7 @@ const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
         context = [mutableContext copy];
     }
     self.sd_latestOperationKey = validOperationKey;
-    [self sd_cancelImageLoadOperationWithKey:validOperationKey];
+    [self sd_cancelImageLoadOperationWithKey:validOperationKey]; // 相同key的operation只能存在一个，新的会覆盖旧的，旧的cancel
     self.sd_imageURL = url;
     
     if (!(options & SDWebImageDelayPlaceholder)) {
@@ -87,12 +87,12 @@ const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
         
 #if SD_UIKIT || SD_MAC
         // check and start image indicator
-        [self sd_startImageIndicator];
+        [self sd_startImageIndicator]; // TODO:image indicator
         id<SDWebImageIndicator> imageIndicator = self.sd_imageIndicator;
 #endif
         SDWebImageManager *manager = context[SDWebImageContextCustomManager];
         if (!manager) {
-            manager = [SDWebImageManager sharedManager];
+            manager = [SDWebImageManager sharedManager]; // manager包含一个session，用来下载图片
         } else {
             // remove this manager to avoid retain cycle (manger -> loader -> operation -> context -> manager)
             SDWebImageMutableContext *mutableContext = [context mutableCopy];
@@ -122,7 +122,12 @@ const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
             }
         };
         @weakify(self);
-        id <SDWebImageOperation> operation = [manager loadImageWithURL:url options:options context:context progress:combinedProgressBlock completed:^(UIImage *image, NSData *data, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
+        // 这种写法是为了保存operation以便可以取消。
+        id <SDWebImageOperation> operation = [manager loadImageWithURL:url
+                                                               options:options
+                                                               context:context
+                                                              progress:combinedProgressBlock
+                                                             completed:^(UIImage *image, NSData *data, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
             @strongify(self);
             if (!self) { return; }
             // if the progress not been updated, mark it to complete state
